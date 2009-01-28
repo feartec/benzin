@@ -3,14 +3,14 @@ formats = {
     'pane': '''
             u8 flags_1          // 8
             u8 flags_2          // 9
-            u8 alpha_1          // a
+            u8 alpha          // a
             u8 alpha_2          // b
             char name[0x18]     // c
             float x             // 24
             float y             // 28
             float z             // 2c
-            float pane_unk1     // 30
-            float pane_unk2     // 34
+            float pane_unk1 = 0 // 30
+            float pane_unk2 = 0 // 34
             float angle         // 38
             float xmag          // 3c
             float ymag          // 40
@@ -19,29 +19,26 @@ formats = {
             etc!
         ''',
     'text': '''
-            u16 unk1        // 4c
-            u16 unk2        // 4e
-            u16 mat_off     // 50
-            u16 unk3        // 52
-            u8 unk4         // 54
-            u8 unk5[3]      // 55
-            u32 name_offs   // 58
-            u32 unk6        // 5c
-            u32 unk7        // 60
-            float unk8      // 64
-            float unk9      // 68
-            float unka      // 6c
-            float unkb      // 70
+            u16 len1            // 4c
+            u16 len2            // 4e
+            u16 mat_off         // 50
+            u16 unk3            // 52
+            u8 unk4             // 54
+            u8 pad[3] = [0, 0, 0]// 55
+            u32 name_offs       // 58
+            u32 unk6            // 5c
+            u32 unk7            // 60
+            float font_size_x   // 64
+            float font_size_y   // 68
+            float char_space    // 6c
+            float line_space    // 70
             etc!
         ''',
     'pic': '''
-            u32 unk1        // 4c
-            u32 unk2        // 50
-            u32 unk3        // 54
-            u32 unk4        // 58
-            u16 mat_off     // 5c
-            u8 num_texcoords// 5e, should be < 8
-            u8 padding      // 5f
+            u32 vtx_colors[4] = [0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff] // 4c - what are these?
+            u16 mat_off             // 5c
+            u8 num_texcoords        // 5e, should be < 8
+            u8 padding = 0          // 5f
             etc!
         ''',
     'group': '''
@@ -57,9 +54,10 @@ formats = {
             etc!
         ''',
     'lytheader': '''
-            u32 a
-            u32 b
-            u32 c
+            u8 a
+            u8 pad[3] = [0, 0, 0]
+            float width
+            float height
         ''',
 
 }
@@ -78,22 +76,34 @@ for (dname, definition) in formats.items():
             if i == 'etc!':
                 etcn = True
             continue
-        typ, name = [j.strip() for j in i.split()]
+        x = [j.strip() for j in i.split()]
+        typ, name = x[:2]
+        try:
+            assert x[2] == '='
+            default = eval(' '.join(x[3:]))
+        except:
+            default = None
         m = re.match('^([^\[]+)\[([a-zA-Z0-9]+)\]$', name)
         if m:
             name = m.group(1)
             size = eval(m.group(2))
-            df.append((typ, (name, size)))
+            df.append((typ, (name, size), default))
         else:
-            df.append((typ, name))
+            df.append((typ, name, default))
     formats[dname] = df, etc, etcn
     
-    
-
+def my_repr(b):
+    if type(b) in (int, long):
+        rep = hex(b)
+    elif type(b) in (list, tuple):
+        rep = '[' + ', '.join(map(my_repr, b)) + ']'
+    else:
+        rep = repr(b)
+    return rep
 def pr_dict(data, start=''):
     for a in sorted(data.keys()):
         b = data[a]
-        print '%s%s: %s' % (start, str(a), hex(b) if type(b) in (int, long) else repr(b))
+        print '%s%s: %s' % (start, str(a), my_repr(b))
 types = {
     'u8': 'B',
     'u16': 'H',
@@ -123,6 +133,15 @@ def nullterm(str_plus):
         return str_plus[:z]
     else:
         return str_plus
+def unnullterm(var, size):
+    if len(var) > size:
+        raise Exception('unnullterm: "%s" too long' % var)
+    return var.ljust(size, '\0')
+def untv(name):
+    assert '\0' not in name
+    lex = len(name) + 16
+    lex -= lex % 16
+    return name.ljust(lex, '\0')
 def parse_data(chunk, definition, prefix=None, start=0):
     df, etc, etcn = formats[definition]
     #print df, repr(definition)
@@ -130,7 +149,7 @@ def parse_data(chunk, definition, prefix=None, start=0):
 
     pos = start
     ret = {}
-    for typ, name in df:
+    for typ, name, _ in df:
         try:
             name, size = name
         except:
@@ -172,20 +191,27 @@ def unparse_var(typ, var):
 def unparse_data(vars, definition, prefix=None):
     df, etc, etcn = formats[definition]
     ret = ''
-    for typ, name in df:
+    for typ, name, default in df:
         size = None
         try:
             name, size = name
         except:
             pass
         if prefix is not None:
-            name = re.sub('^' + re.quote(prefix) + '\.', '', name)
-        var = vars[name]
+            name = prefix + '.' + name
+        try:
+            var = vars[name]
+        except KeyError:
+            if default is None:
+                raise
+            else:
+                var = default
+                
         if size is None:
             ret += unparse_var(typ, var)
         else:
             if typ == 'char':
-                ret += var.ljust(size, '\0')
+                ret += unnullterm(var, size)
             else:
                 assert len(var) == size
                 for v in var:
