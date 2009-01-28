@@ -1,26 +1,38 @@
 import sys, struct, re
+
 f = open(sys.argv[1], 'rb')
 rlyt = f.read()
 f.close()
+
+from ethyl import formats
+for (name, definition) in formats.items():
+    definition = re.sub(re.compile('//.*$', re.M), '', definition)
+    definition = definition.strip()
+    definition = re.sub('\n[\n ]+', '\n', definition)
+    df = [[j.strip() for j in i.strip().split()] for i in definition.split('\n')]
+    formats[name] = df
+
 def pr_dict(data, start=''):
     for a in sorted(data.keys()):
         b = data[a]
-        print '%s%s: %s' % (start, str(a), hex(b) if type(b) in (int, long) else str(b))
+        print '%s%s: %s' % (start, str(a), hex(b) if type(b) in (int, long) else repr(b))
+types = {
+    'u8': 'B',
+    'u16': 'H',
+    'u32': 'I',
+    'u64': 'Q',
+    's8': 'b',
+    's16': 'h',
+    's32': 'i',
+    's64': 'q',
+    'float': 'f',
+    'f32': 'f',
+    'double': 'd',
+    'f64': 'd',
+    'bool': 'c',
+    'char': 'c',
+}
 def parse_var(pos, typ, chunk):
-    types = {
-        'u16': 'H',
-        'u32': 'I',
-        'u64': 'Q',
-        's16': 'h',
-        's32': 'i',
-        's64': 'q',
-        'float': 'f',
-        'f32': 'f',
-        'double': 'd',
-        'f64': 'd',
-        'bool': 'c',
-        'char': 'c',
-    }
     if not types.has_key(typ):
         raise Exception('What\'s a %s?' % typ)
     fmt = '>' + types[typ]
@@ -33,13 +45,14 @@ def nullterm(str_plus):
         return str_plus[:z]
     else:
         return str_plus
-def parse_data(chunk, definition):
-    df = [[j.strip() for j in i.strip().split()] for i in definition.strip().split('\n')]
-    
+def parse_data(chunk, definition, prefix=None, start=0):
+    df = formats[definition][:]
+    #print df, repr(definition)
+    print df
     etc = df[-1][0][:3] == 'etc'
-    etcn =  etc and df.pop() == ['etc!']
+    etcn = etc and df.pop() == ['etc!']
 
-    pos = 0
+    pos = start
     ret = {}
     for typ, name in df:
         m = re.match('^([^\[]+)\[([a-zA-Z0-9]+)\]$', name)
@@ -63,8 +76,19 @@ def parse_data(chunk, definition):
                 ret[name] = [ret[name], var]
         else:
             ret[name] = var
-    if not etc and pos != len(chunk):
-        raise Exception('Incomplete handling...')
+    #print hex(pos)
+    if pos > len(chunk):
+        raise Exception('too much!')
+    if pos < len(chunk):
+        if etc and not etcn:
+            ret['etc'] = repr(chunk[pos:])
+        elif not etc:
+            raise Exception('Incomplete handling...')
+    if prefix is not None:
+        ret2 = {}
+        for (k, v) in ret.items():
+            ret2[prefix + '.' + k] = v
+        ret = ret2
     return (ret, pos) if etcn else ret
         
 def iff_to_chunks(z):
@@ -87,43 +111,33 @@ for typ, chunk in ch:
     print '    ' * indent + typ + ' ' + hex(len(chunk))
     vars = None
     if typ in ('pic1', 'pan1', 'bnd1', 'wnd1', 'txt1'):  
-        vars = parse_data(chunk, '''
-            u16 flags
-            u16 alpha
-            char name[0x18]
-            float x
-            float y
-            float unk[3]
-            float angle
-            float xmag
-            float ymag
-            float width
-            float height
-            etc
-        ''')
+        vars, pos = parse_data(chunk, 'pane')
+        if typ == 'txt1':
+            vars2, pos = parse_data(chunk[pos:], 'text', '~text')
+            
+            txt = chunk[vars2['~text.name_offs'] - 8:]
+            vars2['~text.text'] = unicode(txt, 'utf_16_be').rstrip('\x00')
+            vars.update(vars2)
+        elif typ == 'pic1':
+            vars2, pos = parse_data(chunk, 'pic', prefix='~pic', start=pos)
+
+            vars2['~pic.texcoords'] = []
+            for n in xrange(vars2['~pic.num_texcoords']):
+                vars2['~pic.texcoords'].append(struct.unpack('>ffffffff', chunk[pos:pos+0x20]))
+                pos += 0x20
+            assert pos == len(chunk)
+            vars.update(vars2)
     elif typ == 'lyt1':
-        vars = parse_data(chunk, '''
-            u32 unk[3]
-        ''')
+        vars = parse_data(chunk, 'lytheader')
     elif typ == 'grp1':
-        print repr(chunk)
-        vars, pos = parse_data(chunk, '''
-            char name[16]
-            u16 numsubs
-            u16 unk
-            etc!
-        ''')
+        vars, pos = parse_data(chunk, 'group')
         vars['subs'] = []
         for n in xrange(vars['numsubs']):
             vars['subs'].append(nullterm(chunk[pos:pos+16]))
             pos += 16
     elif typ in ('txl1', 'fnl1', 'mat1'):
         things = {'txl1': 'textures', 'fnl1': 'files', 'mat1': 'materials'}[typ]
-        vars, pos = parse_data(chunk, '''
-            u16 num
-            u16 offs
-            etc!
-        ''')
+        vars, pos = parse_data(chunk, 'numoffs')
         vars[things] = []
         pos += vars['offs']
         del vars['offs'] # unneeded
@@ -136,6 +150,8 @@ for typ, chunk in ch:
                 pos += 8
             name = nullterm(chunk[offset - 8:])
             vars[things].append(name if typ == 'mat1' else {'name': name, 'unk': unk})
+        if typ == 'mat1':
+            materials = vars['materials']
     elif typ in ('grs1', 'pas1'):
         indent += 1
     elif typ in ('gre1', 'pae1'):
