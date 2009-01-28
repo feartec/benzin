@@ -86,7 +86,7 @@ indent = 0
 for typ, chunk in ch:
     print '    ' * indent + typ + ' ' + hex(len(chunk))
     vars = None
-    if typ in ('pic1', 'pan1', 'bnd1', 'wnd1'):  
+    if typ in ('pic1', 'pan1', 'bnd1', 'wnd1', 'txt1'):  
         vars = parse_data(chunk, '''
             u16 flags
             u16 alpha
