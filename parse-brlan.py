@@ -22,19 +22,20 @@ for typ, chunk in ch:
     for n in xrange(num_anims):
        pos = anim_offset - 8 + 4*n
        offs = struct.unpack('>I', chunk[pos:pos+4])[0] - 8
-       name = chunk[offs:offs + 20].rstrip('\0') # ignored by code
-       aoffs = offs + struct.unpack('>I', chunk[offs + 0x18:offs + 0x1c])[0]
+       name = chunk[offs:offs + 20].rstrip('\0')
+       aunk, aoffs = struct.unpack('>II', chunk[offs + 0x14:offs + 0x1c])
+       aoffs += offs
        atyp = chunk[aoffs:aoffs+4]
        num_aents = ord(chunk[aoffs + 4])
-       print atyp
+       print atyp, name, hex(aunk)
        for m in xrange(num_aents):
             boffs = aoffs + 8 + 4*m
             coffs, = struct.unpack('>I', chunk[boffs:boffs + 4])
             coffs += aoffs
-            if atyp == 'RLMC':
-                alpha_maybe = ord(chunk[coffs])
+            if atyp in ('RLMC', 'RLVC', 'RLPA', 'RLTP', 'RLIM'): # doesn't cover RLTS, RLVI
+                alpha_maybe = ord(chunk[coffs+1])
                 num_cookies, pad, cookies_offs = struct.unpack('>HHI', chunk[coffs+4:coffs+0xc])
-                print num_cookies
+                print hex(alpha_maybe), num_cookies
                 for o in xrange(num_cookies):
                     cookie_offs = coffs + cookies_offs + 0xc*o
                     coords = struct.unpack('>fff', chunk[cookie_offs:cookie_offs + 0xc])
