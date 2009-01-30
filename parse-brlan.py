@@ -12,6 +12,16 @@ ch = iff_to_chunks(rlan[offs:])
 
 assert len(ch) == nel
 
+# Holy indirection
+# rlan
+#   pai1
+#       timg
+#       anim
+#           anim body
+#               aent
+#                   aent body
+#
+
 for typ, chunk in ch:
     assert typ == 'pai1'
     framesize, flags, _, num_timgs, num_anims, anim_offset = struct.unpack('>hbbhhI', chunk[:0xc])

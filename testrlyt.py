@@ -6,15 +6,13 @@
     }),
     ('txl1', {
         'textures': [
-            {'unk': 0, 'name': ''},
-            {'unk': 1, 'name': 'foo1'},
-            {'unk': 0, 'name': 'foo2'},
-            {'unk': 0, 'name': 'foo3'},
+            {'unk': 0, 'name': 'spam12345'},
+            {'unk': 1, 'name': 'spamnonexist'},
         ]
     }),
     ('fnl1', {
         'files': [
-            {'unk': 0, 'name': 'your mom'}
+            {'unk': 0, 'name': 'wbf1.brfna'},
         ]
     }),
     ('mat1', {
@@ -40,8 +38,8 @@
             'alpha': 0xff,
             'alpha_2': 0x0,
             'angle': 0,
-            'flags_1': 5,
-            'flags_2': 4,
+            'flags_1': 1,
+            'flags_2': 0,
             'height': 38,
             'name': 'textbox',
             'width': 400,
@@ -52,11 +50,10 @@
             'z': 0,
             '~text.material': 'textmat',
             '~text.text': 'Some Text',
-            '~text.unk3': 0,
-            '~text.unk4': 4,
-            
-            '~text.unk6': 0xffffff,
-            '~text.unk7': 0x80ff,
+            '~text.font_idx': 0,
+            '~text.unk4': 0,
+            '~text.unk6': 0xffffffff,
+            '~text.unk7': 0xffffffff,
             '~text.font_size_x': 32.0,
             '~text.font_size_y': 38.0,
             '~text.char_space': -1.0,
@@ -88,7 +85,7 @@
     'grs1',
         ('grp1', {
             'name': 'ENG',
-            'subs': ['textbox', 'pic'],
+            'subs': ['pic'],#'textbox', 
             'unk': 0
         }),
     'gre1',

@@ -48,6 +48,7 @@ for typ, chunk in ch:
         vars, pos = parse_data(chunk, 'numoffs')
         vars[things] = []
         pos += vars['offs']
+        bpos = pos
         del vars['offs'] # unneeded
         for n in xrange(vars['num']):
             if typ == 'mat1':
@@ -57,7 +58,7 @@ for typ, chunk in ch:
                 offset, unk = struct.unpack('>II', chunk[pos:pos+8])
                 pos += 8
             
-            name = nullterm(chunk[offset - 8:])
+            name = nullterm(chunk[(-8 if typ == 'mat1' else bpos) + offset:])
             vars[things].append(name if typ == 'mat1' else {'name': name, 'unk': unk})
         if typ == 'mat1':
             materials = vars['materials']

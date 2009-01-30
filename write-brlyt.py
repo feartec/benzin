@@ -35,7 +35,7 @@ for c in chunks:
                 offss.append(len(strings))
                 strings += name
             for n, thing in enumerate(ls):
-                chunk += struct.pack('>I', offss[n] + 12 + (4 if typ == 'mat1' else 8) * len(ls))
+                chunk += struct.pack('>I', offss[n] + (12 if typ == 'mat1' else 0) + (4 if typ == 'mat1' else 8) * len(ls))
                 if typ != 'mat1':
                     chunk += struct.pack('>I', thing['unk'])
             chunk += strings
@@ -46,7 +46,7 @@ for c in chunks:
             if typ == 'txt1':
                 vars['~text.name_offs'] = 0x74
                 vars['~text.mat_off'] = materials.index(vars['~text.material'])
-                blob = unicode(vars['~text.text']).encode('utf_16_be')
+                blob = untv(unicode(vars['~text.text']).encode('utf_16_be'))
                 vars['~text.len1'] = vars['~text.len2'] = len(blob)
                 chunk += unparse_data(vars, 'text', prefix='~text')
                 chunk += blob

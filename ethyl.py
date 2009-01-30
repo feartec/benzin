@@ -22,7 +22,7 @@ formats = {
             u16 len1            // 4c
             u16 len2            // 4e
             u16 mat_off         // 50
-            u16 unk3            // 52
+            u16 font_idx        // 52; into fnl1
             u8 unk4             // 54
             u8 pad[3] = [0, 0, 0]// 55
             u32 name_offs       // 58
@@ -138,7 +138,7 @@ def unnullterm(var, size):
         raise Exception('unnullterm: "%s" too long' % var)
     return var.ljust(size, '\0')
 def untv(name):
-    assert '\0' not in name
+    #assert '\0' not in name
     lex = len(name) + 16
     lex -= lex % 16
     return name.ljust(lex, '\0')
