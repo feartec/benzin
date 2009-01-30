@@ -36,16 +36,19 @@ for typ, chunk in ch:
        aunk, aoffs = struct.unpack('>II', chunk[offs + 0x14:offs + 0x1c])
        aoffs += offs
        atyp = chunk[aoffs:aoffs+4]
+       #print hex(aoffs), hex(offs), name
        num_aents = ord(chunk[aoffs + 4])
        print atyp, name, hex(aunk)
+       
        for m in xrange(num_aents):
             boffs = aoffs + 8 + 4*m
             coffs, = struct.unpack('>I', chunk[boffs:boffs + 4])
             coffs += aoffs
-            if atyp in ('RLMC', 'RLVC', 'RLPA', 'RLTP', 'RLIM'): # doesn't cover RLTS, RLVI
-                alpha_maybe = ord(chunk[coffs+1])
+            if atyp in ('RLMC', 'RLVC', 'RLPA', 'RLTP', 'RLIM', 'RLTS'): # doesn't cover RLTS, RLVI
+                byte1 = ord(chunk[coffs+1])
+                byte2 = ord(chunk[coffs+2])
                 num_cookies, pad, cookies_offs = struct.unpack('>HHI', chunk[coffs+4:coffs+0xc])
-                print hex(alpha_maybe), num_cookies
+                print hex(byte1), hex(byte2), num_cookies
                 for o in xrange(num_cookies):
                     cookie_offs = coffs + cookies_offs + 0xc*o
                     coords = struct.unpack('>fff', chunk[cookie_offs:cookie_offs + 0xc])

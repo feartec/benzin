@@ -70,7 +70,7 @@
             'name': 'textbox%d' % i,
             'width': 400,
             'x': -250,
-            'y': -50 + 5*i,
+            'y': -50 + i,
             'xmag': 1,
             'ymag': 1,
             'z': 0,
