@@ -5,6 +5,18 @@ f = open(sys.argv[1], 'r')
 chunks = eval(f.read())
 f.close()
 
+# ugly hack
+def flatten(chunks):
+    a = []
+    for c in chunks:
+        if type(c) == list:
+            a += flatten(c)
+        else:
+            a.append(c)
+    return a
+chunks = flatten(chunks)
+
+
 
 rlyt = 'RLYT\xfe\xff\x00\x08\x00\x00\x00\x00' # size later
 rlyt += struct.pack('>hh', 0x10, len(chunks))

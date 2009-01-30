@@ -26,8 +26,8 @@ formats = {
             u8 unk4             // 54
             u8 pad[3] = [0, 0, 0]// 55
             u32 name_offs       // 58
-            u32 unk6            // 5c
-            u32 unk7            // 60
+            u32 color1          // 5c
+            u32 color2          // 60 (--> dc)
             float font_size_x   // 64
             float font_size_y   // 68
             float char_space    // 6c
