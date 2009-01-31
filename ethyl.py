@@ -59,6 +59,20 @@ formats = {
             float width
             float height
         ''',
+    'material': '''
+            char name[0x14]     // 0
+            s16 tev_color[4]    // 14
+            s16 unkx            // 1c
+            s16 unk5            // 20
+            s16 unk6            // 22
+            s16 unk7            // 24
+            s16 unk8            // 26
+            s16 unk9            // 28
+            s16 unka            // 2a
+            u32 tev_kcolor[4]   // 2c
+            u32 flags           // 3c - 814fee68 - see doc
+            etc!
+        ''',
 
 }
 
@@ -229,3 +243,9 @@ def iff_to_chunks(z):
         pos += length
         chunks.append((cc, data))
     return chunks
+def bit_extract(num, start, end):
+    mask = (2**(31 - start + 1) - 1) - (2**(31 - end) - 1)
+    ret = (num & mask) >> (31 - end)
+    
+    return ret
+

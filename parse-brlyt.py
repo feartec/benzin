@@ -43,25 +43,40 @@ for typ, chunk in ch:
         for n in xrange(vars['numsubs']):
             vars['subs'].append(nullterm(chunk[pos:pos+16]))
             pos += 16
-    elif typ in ('txl1', 'fnl1', 'mat1'):
-        things = {'txl1': 'textures', 'fnl1': 'files', 'mat1': 'materials'}[typ]
+    elif typ in ('txl1', 'fnl1'):
+        things = {'txl1': 'textures', 'fnl1': 'files'}[typ]
         vars, pos = parse_data(chunk, 'numoffs')
         vars[things] = []
         pos += vars['offs']
         bpos = pos
         del vars['offs'] # unneeded
         for n in xrange(vars['num']):
-            if typ == 'mat1':
-                offset, = struct.unpack('>I', chunk[pos:pos+4])
-                pos += 4
-            else:
-                offset, unk = struct.unpack('>II', chunk[pos:pos+8])
-                pos += 8
+            offset, unk = struct.unpack('>II', chunk[pos:pos+8])
+            name = nullterm(chunk[offset + bpos:])
+            vars[things].append({'name': name, 'unk': unk})
+            pos += 8
+    elif typ == 'mat1':
+        vars, pos = parse_data(chunk, 'numoffs')
+        vars['materials'] = []
+        pos += vars['offs']
+        bpos = pos
+        del vars['offs']
+        for n in xrange(vars['num']):
+            offset, = struct.unpack('>I', chunk[pos:pos+4])
+            mat, mpos = parse_data(chunk[offset - 8:], 'material')
+            #vars['materials'].append(mat)
+            flags = mat['flags']
             
-            name = nullterm(chunk[(-8 if typ == 'mat1' else bpos) + offset:])
-            vars[things].append(name if typ == 'mat1' else {'name': name, 'unk': unk})
-        if typ == 'mat1':
-            materials = vars['materials']
+            offs1 = bit_extract(flags, 17, 18) * 0x14
+            offs2 = (bit_extract(flags, 28, 31) * 4) + 0x40
+            offs3 = offs2 + bit_extract(flags, 24, 27) * 0x14 + bit_extract(flags, 20, 23) * 4
+            offs4 = bit_extract(flags, 8, 11) * 4 * 0x14
+            print map(hex, [offs1, offs2, offs3, offs4])
+            
+            pr_dict(mat, '             ')
+            print
+            pos += 4
+        
     elif typ in ('grs1', 'pas1'):
         indent += 1
     elif typ in ('gre1', 'pae1'):
