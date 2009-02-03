@@ -23,10 +23,12 @@ for typ, chunk in ch:
             os = vars2['~text.name_offs'] - 8
             txt = chunk[os:os + vars2['~text.len2']]
             vars2['~text.text'] = unicode(txt, 'utf_16_be').rstrip('\x00')
+            vars2['~text.material'] = materials[vars2['~text.mat_off']]
             vars.update(vars2)
             #print vars['~text.cnt2'], len(vars2['~text.text']), len(txt), repr(txt)
         elif typ == 'pic1':
             vars2, pos = parse_data(chunk, 'pic', prefix='~pic', start=pos)
+            vars2['~pic.material'] = materials[vars2['~pic.mat_off']]
             vars2['~pic.texcoords'] = []
             for n in xrange(vars2['~pic.num_texcoords']):
                 vars2['~pic.texcoords'].append(struct.unpack('>ffffffff', chunk[pos:pos+0x20]))
@@ -59,12 +61,13 @@ for typ, chunk in ch:
         pos += vars['offs']
         bpos = pos
         del vars['offs']
+        materials = []
         for n in xrange(vars['num']):
             offset, = struct.unpack('>I', chunk[pos:pos+4])
             mat, mpos = parse_data(chunk, 'material', start = offset - 8)
             #vars['materials'].append(mat)
             flags = mat['flags']
-            
+            materials.append(mat['name'])
             assert mpos == 0x40 + offset - 8
         
             
@@ -75,47 +78,47 @@ for typ, chunk in ch:
             # 4 * flags[28-31], followed by
             
             
-            mat['ua1'], mpos = get_array(chunk, mpos, bit_extract(flags, 28, 31), 4)
+            mat['texref'], mpos = get_array(chunk, mpos, bit_extract(flags, 28, 31), 4, 'texref')
             
             # 0x14 * flags[24-27], followed by
             
-            mat['ua2'], mpos = get_array(chunk, mpos, bit_extract(flags, 24, 27), 0x14)
+            mat['ua2'], mpos = get_array(chunk, mpos, bit_extract(flags, 24, 27), 0x14, 'ua2')
             
             # 4*flags[20-23], followed by
             
-            mat['ua3'], mpos = get_array(chunk, mpos, bit_extract(flags, 20, 23), 4)
+            mat['ua3'], mpos = get_array(chunk, mpos, bit_extract(flags, 20, 23), 4, '4b')
             
             # 4 * flags[6]
             
-            mat['ua4'], mpos = get_opt(chunk, mpos, bit_extract(flags, 6), 4)
+            mat['ua4'], mpos = get_opt(chunk, mpos, bit_extract(flags, 6), 4, '4b')
             
             # 4 * flags[4]
             
-            mat['ua5'], mpos = get_opt(chunk, mpos, bit_extract(flags, 4), 4)
+            mat['ua5'], mpos = get_opt(chunk, mpos, bit_extract(flags, 4), 4, '4b')
             
             # 4 * flags[19]
             
-            mat['ua6'], mpos = get_opt(chunk, mpos, bit_extract(flags, 19), 4)
+            mat['ua6'], mpos = get_opt(chunk, mpos, bit_extract(flags, 19), 4, '4b')
             
             # 0x14 * flags[17-18]
             
-            mat['ua7'], mpos = get_array(chunk, mpos, bit_extract(flags, 17, 18), 0x14)
+            mat['ua7'], mpos = get_array(chunk, mpos, bit_extract(flags, 17, 18), 0x14, 'ua7')
             
             # 4 * flags[14-16]
             
-            mat['ua8'], mpos = get_array(chunk, mpos, bit_extract(flags, 14, 16), 4)
+            mat['ua8'], mpos = get_array(chunk, mpos, bit_extract(flags, 14, 16), 4, '4b')
             
             # 0x10 * flags[9-13]
             
-            mat['ua8'], mpos = get_array(chunk, mpos, bit_extract(flags, 9, 13), 0x10)
+            mat['ua8'], mpos = get_array(chunk, mpos, bit_extract(flags, 9, 13), 0x10, '10b')
             
             # 4 * flags[8], these are bytes btw
             
-            mat['uaa'], mpos = get_opt(chunk, mpos, bit_extract(flags, 8), 4)
+            mat['uaa'], mpos = get_opt(chunk, mpos, bit_extract(flags, 8), 4, '4b')
             
             # 4 * flags[7]
             
-            mat['uab'], mpos = get_opt(chunk, mpos, bit_extract(flags, 7), 4)
+            mat['uab'], mpos = get_opt(chunk, mpos, bit_extract(flags, 7), 4, '4b')
 
             if n < vars['num'] - 1:
                 next_offset, = struct.unpack('>I', chunk[pos+4:pos+8])
@@ -124,7 +127,6 @@ for typ, chunk in ch:
 
             vars['materials'].append(mat)
             pos += 4
-        
     elif typ in ('grs1', 'pas1'):
         indent += 1
     elif typ in ('gre1', 'pae1'):

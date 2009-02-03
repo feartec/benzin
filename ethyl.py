@@ -62,18 +62,34 @@ formats = {
     'material': '''
             char name[0x14]     // 0
             s16 tev_color[4]    // 14
-            s16 unkx            // 1c
-            s16 unky            // 1e
-            s16 unk5            // 20
-            s16 unk6            // 22
-            s16 unk7            // 24
-            s16 unk8            // 26
-            s16 unk9            // 28
-            s16 unka            // 2a
+            s16 unk_color[4]    // 1c
+            s16 unk_color_2[4]  // 24
             u32 tev_kcolor[4]   // 2c
             u32 flags           // 3c - 814fee68 - see doc
             etc!
         ''',
+    'texref': '''
+            u16 tex_offs
+            u8 wrap_s
+            u8 wrap_t
+        ''',
+    '4b': '''
+            u8 _[4]
+        ''',
+    '10b': '''
+            u8 _[0x10]
+        ''',
+    'ua2': '''
+            float _[5]
+        ''',
+    'ua7': '''
+            u32 a
+            u32 b
+            float c
+            u32 d
+            u32 e
+        ''',
+    
 
 }
 
@@ -223,6 +239,10 @@ def parse_data(chunk, definition, prefix=None, start=0):
         for (k, v) in ret.items():
             ret2[prefix + '.' + k] = v
         ret = ret2
+    
+    if ret.keys() == ['_']: # just an array
+        ret = ret['_']
+
     return (ret, pos) if etcn else ret
 def unparse_var(typ, var):
     if not types.has_key(typ):
@@ -276,25 +296,29 @@ def bit_extract(num, start, end=None):
     ret = (num & mask) >> (31 - end)
     
     return ret
-def get_array(chunk, startpos, array_size, item_size):
+def bit_place(num, start, end=None):
+    # Just for sanity
+    if end is None:
+        end = start
+    assert num <= 2**(start - end)
+    return num << (31 - end)
+def get_array(chunk, startpos, array_size, item_size, item_type=None):
     ar = []
     pos = startpos
+    
     for n in xrange(array_size):
-        if item_size == 4:
-            ar.append(struct.unpack('>I', chunk[pos:pos+4])[0])
-        elif item_size == 1:
-            ar.append(struct.unpack('>B', chunk[pos:pos+4])[0])
-        elif item_size % 4 == 0:
-            ar.append(struct.unpack('>' + 'I'*(item_size/4), chunk[pos:pos+item_size]))
-        else:
-            raise Exception('unhandled')
+        ar.append(get_opt(chunk, pos, True, item_size, item_type)[0])
         pos += item_size
-        
     return ar, pos
-def get_opt(chunk, startpos, enabled, size):
+def get_opt(chunk, startpos, enabled, size, item_type=None):
     if not enabled:
         return None, startpos
+    elif item_type is not None:
+        ret = parse_data(chunk[startpos:startpos+size], item_type)
     elif size == 4:
-        return struct.unpack('>I', chunk[startpos:startpos+4])[0], startpos + 4
+        ret = struct.unpack('>I', chunk[startpos:startpos+4])[0]
+    elif size % 4 == 0:
+        ret = struct.unpack('>' + 'I'*(size/4), chunk[startpos:startpos+size])
     else:
         raise Exception('unhandled')
+    return ret, startpos + size
