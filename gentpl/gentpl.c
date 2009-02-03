@@ -56,6 +56,8 @@ int main(int argc, char **argv) {
     printf("%dx%d\n", gdImageSX(im), gdImageSY(im));
     h.width = htons(gdImageSX(im));
     h.height = htons(gdImageSY(im));
+    h.min = htons(1);
+    h.mag = htons(1);
     
     fwrite(&h, sizeof(h), 1, out);
     
