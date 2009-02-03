@@ -23,12 +23,10 @@ for typ, chunk in ch:
             os = vars2['~text.name_offs'] - 8
             txt = chunk[os:os + vars2['~text.len2']]
             vars2['~text.text'] = unicode(txt, 'utf_16_be').rstrip('\x00')
-            vars2['~text.material'] = materials[vars2['~text.mat_off']]
             vars.update(vars2)
             #print vars['~text.cnt2'], len(vars2['~text.text']), len(txt), repr(txt)
         elif typ == 'pic1':
             vars2, pos = parse_data(chunk, 'pic', prefix='~pic', start=pos)
-            vars2['~pic.material'] = materials[vars2['~pic.mat_off']]
             vars2['~pic.texcoords'] = []
             for n in xrange(vars2['~pic.num_texcoords']):
                 vars2['~pic.texcoords'].append(struct.unpack('>ffffffff', chunk[pos:pos+0x20]))
@@ -63,18 +61,55 @@ for typ, chunk in ch:
         del vars['offs']
         for n in xrange(vars['num']):
             offset, = struct.unpack('>I', chunk[pos:pos+4])
-            mat, mpos = parse_data(chunk[offset - 8:], 'material')
+            mat, mpos = parse_data(chunk, 'material', start = offset - 8)
             #vars['materials'].append(mat)
             flags = mat['flags']
             
-            offs1 = bit_extract(flags, 17, 18) * 0x14
-            offs2 = (bit_extract(flags, 28, 31) * 4) + 0x40
-            offs3 = offs2 + bit_extract(flags, 24, 27) * 0x14 + bit_extract(flags, 20, 23) * 4
-            offs4 = bit_extract(flags, 8, 11) * 4 * 0x14
-            print map(hex, [offs1, offs2, offs3, offs4])
+            assert mpos == 0x40 + offset - 8
+        
             
-            pr_dict(mat, '             ')
-            print
+            #print hex(struct.unpack('>I', chunk[mpos:mpos+4])[0])
+            
+            # I believe material is:
+            # 0x40, followed by
+            # 4 * flags[28-31], followed by
+            
+            
+            mat['ua1'], mpos = get_array(chunk, mpos, bit_extract(flags, 28, 31), 4)
+            
+            # 0x14 * flags[24-27], followed by
+            
+            mat['ua2'], mpos = get_array(chunk, mpos, bit_extract(flags, 24, 27), 0x14)
+            
+            # 4*flags[20-23], followed by
+            
+            mat['ua3'], mpos = get_array(chunk, mpos, bit_extract(flags, 20, 23), 4)
+            
+            # 4 * flags[6]
+            
+            mat['ua4'], mpos = get_opt(chunk, mpos, bit_extract(flags, 6), 4)
+            
+            # 4 * flags[4]
+            
+            mat['ua5'], mpos = get_opt(chunk, mpos, bit_extract(flags, 4), 4)
+            
+            # 4 * flags[19]
+            
+            mat['ua6'], mpos = get_opt(chunk, mpos, bit_extract(flags, 19), 4)
+            
+            # 0x14 * flags[17-18]
+            
+            mat['ua7'], mpos = get_array(chunk, mpos, bit_extract(flags, 17, 18), 0x14)
+            
+            # 4 * flags[14-16]
+            
+            mat['ua8'], mpos = get_array(chunk, mpos, bit_extract(flags, 14, 16), 4)
+            
+            # 4 * flags[8]
+            
+            mat['ua9'], mpos = get_opt(chunk, mpos, bit_extract(flags, 8), 4)
+
+            vars['materials'].append(mat)
             pos += 4
         
     elif typ in ('grs1', 'pas1'):

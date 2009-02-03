@@ -63,6 +63,7 @@ formats = {
             char name[0x14]     // 0
             s16 tev_color[4]    // 14
             s16 unkx            // 1c
+            s16 unky            // 1e
             s16 unk5            // 20
             s16 unk6            // 22
             s16 unk7            // 24
@@ -105,19 +106,44 @@ for (dname, definition) in formats.items():
         else:
             df.append((typ, name, default))
     formats[dname] = df, etc, etcn
-    
-def my_repr(b):
-    if type(b) in (int, long):
+
+# Dumb pretty printer
+def my_repr(b, start=''):
+    special = lambda x: type(x) not in (int, str, unicode)
+    if type(b) == dict:
+        if len(filter(special, b.values())) == 0:
+            rep = '{ '
+            f = False
+            for a in sorted(b.keys()):
+                if f:
+                    rep += ', '
+                else:
+                    f = True
+                rep += '%s: %s' % (str(a), my_repr(b[a]))
+            rep += ' }'
+        else:
+            rep = '{\n'
+            for a in sorted(b.keys()):
+                c = b[a]
+                if type(c) in (dict, list):
+                    rep += '%s:\n%s\n' % (str(a), my_repr(c, '  '))
+                else:
+                    rep += '%s: %s\n' % ( str(a), my_repr(c))
+            rep += '}'
+    elif type(b) in (int, long):
         rep = hex(b)
     elif type(b) in (list, tuple):
-        rep = '[' + ', '.join(map(my_repr, b)) + ']'
+        if len(filter(special, b)) == 0:
+             rep = '[' + ', '.join(map(my_repr, b)) + ']'
+        else:
+            rep = '[\n'
+            rep += ',\n'.join(my_repr(a, '  ') for a in b)
+            rep += '\n]'
     else:
         rep = repr(b)
-    return rep
-def pr_dict(data, start=''):
-    for a in sorted(data.keys()):
-        b = data[a]
-        print '%s%s: %s' % (start, str(a), my_repr(b))
+    return re.sub(re.compile('^', re.M), start, rep)
+def pr_dict(*args):
+    print my_repr(*args)
 types = {
     'u8': 'B',
     'u16': 'H',
@@ -243,9 +269,30 @@ def iff_to_chunks(z):
         pos += length
         chunks.append((cc, data))
     return chunks
-def bit_extract(num, start, end):
+def bit_extract(num, start, end=None):
+    if end is None:
+        end = start
     mask = (2**(31 - start + 1) - 1) - (2**(31 - end) - 1)
     ret = (num & mask) >> (31 - end)
     
     return ret
-
+def get_array(chunk, startpos, array_size, item_size):
+    ar = []
+    pos = startpos
+    for n in xrange(array_size):
+        if item_size == 4:
+            ar.append(struct.unpack('>I', chunk[pos:pos+4])[0])
+        elif item_size % 4 == 0:
+            ar.append(struct.unpack('>' + 'I'*(item_size/4), chunk[pos:pos+item_size]))
+        else:
+            raise Exception('unhandled')
+        pos += item_size
+        
+    return ar, pos
+def get_opt(chunk, startpos, enabled, size):
+    if not enabled:
+        return None, startpos
+    elif size == 4:
+        return struct.unpack('>I', chunk[startpos:startpos+4])[0], startpos + 4
+    else:
+        raise Exception('unhandled')
