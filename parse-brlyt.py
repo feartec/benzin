@@ -105,9 +105,22 @@ for typ, chunk in ch:
             
             mat['ua8'], mpos = get_array(chunk, mpos, bit_extract(flags, 14, 16), 4)
             
-            # 4 * flags[8]
+            # 0x10 * flags[9-13]
             
-            mat['ua9'], mpos = get_opt(chunk, mpos, bit_extract(flags, 8), 4)
+            mat['ua8'], mpos = get_array(chunk, mpos, bit_extract(flags, 9, 13), 0x10)
+            
+            # 4 * flags[8], these are bytes btw
+            
+            mat['uaa'], mpos = get_opt(chunk, mpos, bit_extract(flags, 8), 4)
+            
+            # 4 * flags[7]
+            
+            mat['uab'], mpos = get_opt(chunk, mpos, bit_extract(flags, 7), 4)
+
+            if n < vars['num'] - 1:
+                next_offset, = struct.unpack('>I', chunk[pos+4:pos+8])
+                if next_offset - 8 != mpos:
+                    mat['~_insane'] = next_offset - 8 - mpos # Extra shit we didn't parse :(
 
             vars['materials'].append(mat)
             pos += 4

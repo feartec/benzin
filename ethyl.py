@@ -282,6 +282,8 @@ def get_array(chunk, startpos, array_size, item_size):
     for n in xrange(array_size):
         if item_size == 4:
             ar.append(struct.unpack('>I', chunk[pos:pos+4])[0])
+        elif item_size == 1:
+            ar.append(struct.unpack('>B', chunk[pos:pos+4])[0])
         elif item_size % 4 == 0:
             ar.append(struct.unpack('>' + 'I'*(item_size/4), chunk[pos:pos+item_size]))
         else:
