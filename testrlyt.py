@@ -7,7 +7,7 @@
     ('txl1', {
         'textures': [
             {'unk': 0, 'name': 'icon.tpl'},
-            {'unk': 1, 'name': 'spamnonexist'},
+            {'unk': 1, 'name': 'opera.tpl'},
         ]
     }),
     ('fnl1', {
@@ -24,16 +24,16 @@
             'tev_kcolor': [0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, ],
             'unk_color': [0xff, 0xff, 0xff, 0xff], # Possibly the color of the thing itself
             'unk_color_2': [0xff, 0xff, 0xff, 0xff],
-            'texref': [ { 'tex': 'icon.tpl', 'wrap_s': 0, 'wrap_t': 0 } ],
+            'texref': [ { 'tex': 'opera.tpl', 'wrap_s': 0, 'wrap_t': 0 } ], # screwed up with wrap on
             'ua2': [ (0.0, 0.0, 0.0, 1.0, 1.0) ],
-            'ua3': [ (1, 0xff, 30, 0xff) ], # Changing this --> image disappears (not text, though)
+            'ua3': [ (1, 4, 0x1e, 0) ], # Changing this --> image disappears (not text, though)
             'ua4': None,
             'ua5': None,
             'ua6': None,
             'ua7': [],
             'ua8': [],
             'ua9': [],
-            'uaa': [0x77, 0x77, 0x77, 0x77],
+            'uaa': [0x77, 0, 0, 0],
             'uab': None,
             
             
@@ -91,8 +91,8 @@
             #'height': 38,
             #'name': 'textbox%d' % i,
             #'width': 400,
-            #'x': -250,
-            #'y': -50 + i,
+            #'x': random.randint(0, 600),
+            #'y': random.randint(0, 600),
             #'xmag': 1,
             #'ymag': 1,
             #'z': 0,
@@ -100,42 +100,34 @@
             #'~text.text': 'benzin (and built-in fonts) ftw!',
             #'~text.font_idx': 1,
             #'~text.unk4': 0,
-            #'~text.color1': 0xff + 0x01080800*i,
-            #'~text.color2': 0xff + 0x08080100*i,
+            #'~text.color1': 0xffffffff,
+            #'~text.color2': 0xffffffff,
             #'~text.font_size_x': 32.0,
             #'~text.font_size_y': 38.0,
             #'~text.char_space': -1.0,
             #'~text.line_space': -1.0,
-        #}) for i in xrange(2, 30)],
+        #}) for i in xrange(2, 29)],
         ('pic1', {
             'alpha': 0xff,
             'alpha_2': 0x0,
             'angle': 0,
-            'flags_1': 1,
+            'flags_1': 5,
             'flags_2': 4,
-            'width': 120,
-            'height': 66,
+            'width': 400,
+            'height': 180,
             'name': 'pic',
-            'x': 150,
-            'y': 50,
-            'xmag': 0.75,
-            'ymag': 0.75,
+            'x': 0,
+            'y': 0,
+            'xmag': 1,
+            'ymag': 1,
             'z': 0,
             '~pic.material': 'textmat',
             '~pic.texcoords': [(0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0)],
         }),
     'pae1',
-        ('grp1', {
+    ('grp1', {
         'name': 'RootGroup',
         'subs': [],
         'unk': 0
     }),
-    'grs1',
-        ('grp1', {
-            'name': 'ENG',
-            'subs': ['pic'],#'textbox', 
-            'unk': 0
-        }),
-    'gre1',
-
 ]

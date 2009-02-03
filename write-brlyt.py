@@ -1,4 +1,4 @@
-import sys, struct, re
+import sys, struct, re, random
 from ethyl import *
 
 f = open(sys.argv[1], 'r')
