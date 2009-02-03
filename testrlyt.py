@@ -33,7 +33,7 @@
             'ua7': [],
             'ua8': [],
             'ua9': [],
-            'uaa': [0x77, 0, 0, 0],
+            'uaa': [0x77, 0, 0, 0], # was: [0x77, 0, 0, 0]
             'uab': None,
             
             
@@ -111,8 +111,8 @@
             'alpha': 0xff,
             'alpha_2': 0x0,
             'angle': 0,
-            'flags_1': 5,
-            'flags_2': 4,
+            'flags_1': 1, # Black if omitted
+            'flags_2': 4, # "X, Y at center?"
             'width': 608,
             'height': 456,
             'name': 'pic',

@@ -51,8 +51,8 @@ int main(int argc, char **argv) {
     struct texthead h;
     memset(&h, 0, sizeof(h));
     
-    h.format = htonl(6);
-    h.offs = htonl(0x14 + sizeof(h));
+    h.format = htonl(4); // RGB565
+    h.offs = htonl(0x14 + sizeof(h) + 8);
     printf("%dx%d\n", gdImageSX(im), gdImageSY(im));
     h.width = htons(gdImageSX(im));
     h.height = htons(gdImageSY(im));
@@ -61,6 +61,8 @@ int main(int argc, char **argv) {
     
     fwrite(&h, sizeof(h), 1, out);
     
+    for(int i = 0; i < 8; i++) fputc(0, out);
+    
     for(int y = 0; y < gdImageSY(im); y += 4) {
         for(int x = 0; x < gdImageSX(im); x += 4) {
             for(int y1 = y; y1 < y + 4; y1++) {
@@ -68,20 +70,18 @@ int main(int argc, char **argv) {
                     int p = gdImageGetPixel(im, x1, y1);
                     unsigned char a = 254 - 2*((unsigned char) gdImageAlpha(im, p));
                     if(a == 254) a++;
-                    unsigned char b = (unsigned char) gdImageRed(im, p);
-                    fputc(a, out);
-                    fputc(b, out);                }
-            }
-        
-            for(int y1 = y; y1 < y + 4; y1++) {
-                for(int x1 = x; x1 < x + 4; x1++) {
-                    int p = gdImageGetPixel(im, x1, y1);
-                    unsigned char a = (unsigned char) gdImageGreen(im, p);
+                    unsigned char r = (unsigned char) gdImageRed(im, p);
+                    unsigned char g = (unsigned char) gdImageGreen(im, p);
                     unsigned char b = (unsigned char) gdImageBlue(im, p);
-                    fputc(a, out);
-                    fputc(b, out);
+                    unsigned short s = 0;
+                    s |= (r >> 3) << 11;
+                    s |= (g >> 2) << 5;
+                    s |= (b >> 3);
+                    fputc(s >> 8, out);
+                    fputc(s & 0xff, out);
                 }
             }
+        
         }
     }
     
