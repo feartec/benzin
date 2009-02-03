@@ -65,7 +65,7 @@ formats = {
             s16 unk_color[4]    // 1c
             s16 unk_color_2[4]  // 24
             u32 tev_kcolor[4]   // 2c
-            u32 flags           // 3c - 814fee68 - see doc
+            u32 flags = 0       // 3c - 814fee68 - see doc
             etc!
         ''',
     'texref': '''
@@ -251,6 +251,17 @@ def unparse_var(typ, var):
 def unparse_data(vars, definition, prefix=None):
     df, etc, etcn = formats[definition]
     ret = ''
+    
+    #print df, vars
+    
+    if len(df) == 1:
+        try:
+            assert df[0][1] == '_' or df[0][1][0] == '_'
+        except:
+            pass
+        else:
+            vars = {'_': vars}
+    
     for typ, name, default in df:
         size = None
         try:
@@ -300,7 +311,7 @@ def bit_place(num, start, end=None):
     # Just for sanity
     if end is None:
         end = start
-    assert num <= 2**(start - end)
+    assert num <= 2**(end - start)
     return num << (31 - end)
 def get_array(chunk, startpos, array_size, item_size, item_type=None):
     ar = []
@@ -322,3 +333,26 @@ def get_opt(chunk, startpos, enabled, size, item_type=None):
     else:
         raise Exception('unhandled')
     return ret, startpos + size
+    
+def put_array(var, flags, start, end, item_size, item_type=None):
+    ret = ''
+    for el in var:
+        dat, _ = put_opt(el, flags, 0, item_size, item_type)
+        ret += dat
+    flags |= bit_place(len(var), start, end)
+    return ret, flags
+        
+def put_opt(var, flags, bit, size, item_type=None):
+    if var is None:
+        return '', flags
+    else:
+        flags |= bit_place(1, bit)
+        if item_type is not None:
+            ret = unparse_data(var, item_type)
+        elif size == 4:
+            ret = struct.pack('>I', var)
+        elif size % 4 == 0:
+            ret = struct.pack('>' + 'I'*(size/4), *var)
+        else:
+            raise Exception('unhandled')
+        return ret, flags

@@ -55,6 +55,8 @@ for typ, chunk in ch:
             name = nullterm(chunk[offset + bpos:])
             vars[things].append({'name': name, 'unk': unk})
             pos += 8
+        if typ == 'txl1':
+            textures = vars['textures']
     elif typ == 'mat1':
         vars, pos = parse_data(chunk, 'numoffs')
         vars['materials'] = []
@@ -80,6 +82,9 @@ for typ, chunk in ch:
             
             mat['texref'], mpos = get_array(chunk, mpos, bit_extract(flags, 28, 31), 4, 'texref')
             
+            for a in mat['texref']:
+                a['tex'] = textures[a['tex_offs']]['name']
+            
             # 0x14 * flags[24-27], followed by
             
             mat['ua2'], mpos = get_array(chunk, mpos, bit_extract(flags, 24, 27), 0x14, 'ua2')
@@ -87,6 +92,12 @@ for typ, chunk in ch:
             # 4*flags[20-23], followed by
             
             mat['ua3'], mpos = get_array(chunk, mpos, bit_extract(flags, 20, 23), 4, '4b')
+            
+            # Changing ua3 things
+            # 1st --> disappears.
+            # 2nd --> no visible effect.
+            # 3rd --> disappears.
+            # 4th --> no visible effect.
             
             # 4 * flags[6]
             
@@ -110,7 +121,7 @@ for typ, chunk in ch:
             
             # 0x10 * flags[9-13]
             
-            mat['ua8'], mpos = get_array(chunk, mpos, bit_extract(flags, 9, 13), 0x10, '10b')
+            mat['ua9'], mpos = get_array(chunk, mpos, bit_extract(flags, 9, 13), 0x10, '10b')
             
             # 4 * flags[8], these are bytes btw
             
@@ -124,6 +135,9 @@ for typ, chunk in ch:
                 next_offset, = struct.unpack('>I', chunk[pos+4:pos+8])
                 if next_offset - 8 != mpos:
                     mat['~_insane'] = next_offset - 8 - mpos # Extra shit we didn't parse :(
+
+            mat['unk_bit_5'] = bit_extract(flags, 5)
+            mat['unk_bits_0_3'] = bit_extract(flags, 0, 3) # Overwritten by stuff
 
             vars['materials'].append(mat)
             pos += 4
