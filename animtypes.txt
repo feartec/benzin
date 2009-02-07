@@ -1,0 +1,23 @@
+RLPA
+0   translateX
+1   translateY
+2   translateZ
+3   pane_unk1
+4   pane_unk2
+5   angle
+6   xmag
+7   ymag
+8   width
+9   height
+a   ??
+b   ??
+c   ??
+d   ??
+e   ??
+f   ??
+
+RLVC --> vertex colors, arg can be 0 - f
+
+this calls SetColorElement... except for Pictures (from disassembly) it seems ONLY to have an effect for arg = 0x10!  For this it's alpha
+
+RLMC --> material colors?

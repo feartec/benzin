@@ -25,7 +25,7 @@ assert len(ch) == nel
 for typ, chunk in ch:
     assert typ == 'pai1'
     framesize, flags, _, num_timgs, num_anims, anim_offset = struct.unpack('>hbbhhI', chunk[:0xc])
-    print 'Framesize: %x\nFlags:     %x' % (framesize, flags)
+    print 'Framesize: %d\nFlags:     %x' % (framesize, flags)
     for n in xrange(num_timgs):
        pos = 0x10 + 4*n
        offs = struct.unpack('>I', chunk[pos:pos+4])
