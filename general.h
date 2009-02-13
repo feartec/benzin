@@ -7,9 +7,18 @@
  *
  */
 
+#define BENZIN_VERSION_MAJOR		0
+#define BENZIN_VERSION_MINOR		1
+#define BENZIN_VERSION_BUILD		100
+#define BENZIN_VERSION_OTHER		"WIP"
+
+#define USE_BRLAN
+//#define USE_BRLYT
+
 #define fatal(x)	printf(x); exit(1)
 
-void LZ77Decompress(void *indata, size_t dlen, u8* ret)
+// WTF is this doing here?
+/*void LZ77Decompress(void *indata, size_t dlen, u8* ret)
 {
 	int inp = 0;
 	u8* data = (u8*)calloc(dlen + 16, 1);
@@ -50,3 +59,4 @@ void LZ77Decompress(void *indata, size_t dlen, u8* ret)
 		}
 	}
 }
+*/

@@ -109,7 +109,9 @@ static void DisplayTagInformation(int idx, tag_header* heads, tag_entry** entrie
 		printf("			Entry %u:\n", i);
 	if(FourCCsMatch(head.magic, tag_FourCCs[0]) == 1)
 		printf("				Type: %s\n", RLPA_Types[i]);
-		printf("				Offset: %lu\n", be32(entries[i].offset));
+
+// User doesn't need to know the offset
+//		printf("				Offset: %lu\n", be32(entries[i].offset));
 		printf("				Flags: %08x\n", be32(entryinfos[i].flags));
 
 // Yet again, these are always the same, and seem to maybe be some marker. don't bother to show.
