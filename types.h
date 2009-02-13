@@ -13,4 +13,6 @@ typedef signed long long s64;
 typedef float f32;
 typedef double f64;
 
+typedef char fourcc[4];
+
 #endif //__TYPEDEFS_H_
