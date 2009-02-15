@@ -1,11 +1,18 @@
 import sys, struct, re
 from ethyl import *
 
-CAT_COORDS  = 0x1000000
-CAT_2_UNK   = 0x2000000 # alpha and stuff
-COORD_X     = 0
-COORD_Y     = 1
-
+CAT_COORDS   = 0x1000000
+CAT_2_UNK    = 0x2000000 # alpha and stuff
+COORD_X      = 0
+COORD_Y      = 1
+COORD_Z      = 2
+COORD_FLIP_X = 3
+COORD_FLIP_Y = 4
+COORD_ANGLE  = 5
+COORD_XMAG   = 6
+COORD_YMAG   = 7
+COORD_WIDTH  = 8
+COORD_HEIGHT = 9
 f = open(sys.argv[1], 'r')
 data = eval(f.read())
 f.close()

@@ -3,14 +3,14 @@ formats = {
     'pane': '''
             u8 flags_1          // 8
             u8 flags_2          // 9
-            u8 alpha          // a
+            u8 alpha            // a
             u8 alpha_2          // b
             char name[0x18]     // c
             float x             // 24
             float y             // 28
             float z             // 2c
-            float pane_unk1 = 0 // 30
-            float pane_unk2 = 0 // 34
+            float flip_x = 0    // 30 - note: flip_x = rotate around the x axis, which is a *vertical* flip
+            float flip_y = 0    // 34
             float angle         // 38
             float xmag          // 3c
             float ymag          // 40
@@ -22,7 +22,7 @@ formats = {
             u16 len1            // 4c
             u16 len2            // 4e
             u16 mat_off         // 50
-            u16 font_idx        // 52; into fnl1
+            u16 font_idx        // 52 - into fnl1
             u8 unk4             // 54
             u8 pad[3] = [0, 0, 0]// 55
             u32 name_offs       // 58
