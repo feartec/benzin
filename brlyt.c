@@ -14,8 +14,6 @@
 #include "types.h"
 #include "brlyt.h"
 
-//#define DEBUGBRLYT
-
 #ifdef DEBUGBRLYT
 #define dbgprintf	printf
 #else
@@ -166,16 +164,16 @@ void PrintBRLYTEntries(brlyt_entry *entries, int entrycnt, u8* brlyt_file)
 			printf("		Type: %c%c%c%c\n", entries[i].magic[0], entries[i].magic[1], entries[i].magic[2], entries[i].magic[3]);
 			printf("		Flags: %04x (%08x)\n", be16(data.flags));
 			printf("		Alpha: %04x (%08x)\n", be16(data.alpha));
-			printf("		X: %f (%08x) (%08x)\n", data.x, &data.x, &data);
-			printf("		Y: %f (%08x)\n", data.y);
-			printf("		X Magnification: %f (%08x)\n", data.xmag);
-			printf("		Y Magnification: %f (%08x)\n", data.ymag);
-			printf("		Width: %f (%08x)\n", data.width);
-			printf("		Height: %f (%08x)\n", data.height);
-			printf("		Angle: %f (%08x)\n", data.angle);
-			printf("		unk1: %f (%08x)\n", data.unk[0]);
-			printf("		unk2: %f (%08x)\n", data.unk[1]);
-			printf("		unk3: %f (%08x)\n", data.unk[2]);
+			printf("		X: %f (%08x) (%08x)\n", be32(data.x), &data.x, &data);
+			printf("		Y: %f (%08x)\n", be32(data.y));
+			printf("		X Magnification: %f (%08x)\n", be32(data.xmag));
+			printf("		Y Magnification: %f (%08x)\n", be32(data.ymag));
+			printf("		Width: %f (%08x)\n", be32(data.width));
+			printf("		Height: %f (%08x)\n", be32(data.height));
+			printf("		Angle: %f (%08x)\n", be32(data.angle));
+			printf("		unk1: %f (%08x)\n", be32(data.unk[0]));
+			printf("		unk2: %f (%08x)\n", be32(data.unk[1]));
+			printf("		unk3: %f (%08x)\n", be32(data.unk[2]));
 		}else if((FourCCsMatch(entries[i].magic, lyt1_magic) == 1)) {
 			dbgprintf("lyt1\n");
 			PrintBRLYTEntry_lyt1(entries[i], brlyt_file);
@@ -248,6 +246,10 @@ void parse_brlyt(char *filename)
 	printf("	Unk2: %04x\n", be16(header.unk2));
 	printf("\nBRLYT Entries:");
 	PrintBRLYTEntries(entries, entrycount, brlyt_file);
+}
+
+void make_brlyt(char* infile, char* outfile)
+{
 }
 
 

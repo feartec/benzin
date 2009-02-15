@@ -10,11 +10,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
+#include <mxml.h>
 
+#include "memfile.h"
 #include "types.h"
 #include "brlan.h"
-
-//#define DEBUGBRLAN
+#include "xml.h"
 
 #ifdef DEBUGBRLAN
 #define dbgprintf	printf
@@ -22,9 +24,11 @@
 #define dbgprintf	//
 #endif //DEBUGBRLAN
 
+#define MAXIMUM_TAGS_SIZE		(0x1000)
+
 fourcc tag_FourCCs[] = { "RLPA", "RLTS", "RLVI", "RLVC", "RLMC", "RLTP" };
 
-char RLPA_Types[15][24];
+char tag_types_list[15][24];
 
 static size_t BRLAN_fileoffset = 0;
 
@@ -61,7 +65,7 @@ static void CreateGlobal_pai1(brlan_pai1_header_type2 *pai1_header, brlan_pai1_h
 		memcpy(pai1_header, &pai1_header2, sizeof(brlan_pai1_header_type2));
 }
 
-static void DisplayTagData(u32 flags, tag_data data, int z)
+static void DisplayTagData(tag_data data, int z)
 {
 	u32 p1 = be32(data.part1);
 	u32 p2 = be32(data.part2);
@@ -108,19 +112,20 @@ static void DisplayTagInformation(int idx, tag_header* heads, tag_entry** entrie
 	for(i = 0; i < head.entry_count; i++) {
 		printf("			Entry %u:\n", i);
 	if(FourCCsMatch(head.magic, tag_FourCCs[0]) == 1)
-		printf("				Type: %s\n", RLPA_Types[i]);
+//		printf("				Type: %04x\n", be16(entryinfos[i].type));
+		printf("				Type: %s (%04x)\n", tag_types_list[be32(entryinfos[i].type) % 16], be16(entryinfos[i].type));
 
 // User doesn't need to know the offset
 //		printf("				Offset: %lu\n", be32(entries[i].offset));
-		printf("				Flags: %08x\n", be32(entryinfos[i].flags));
 
 // Yet again, these are always the same, and seem to maybe be some marker. don't bother to show.
 /*		printf("				Unk1: %04x\n", be16(entryinfos[i].pad1));
-		printf("				Unk2: %08x\n", be32(entryinfos[i].unk1)); */
+		printf("				Unk2: %04x\n", be16(entryinfos[i].unk1));
+		printf("				Unk3: %08x\n", be32(entryinfos[i].unk2)); */
 		printf("				Triplet Count: %u\n", be16(entryinfos[i].coord_count));
 		printf("				Triplets:\n");
 		for(z = 0; z < be16(entryinfos[i].coord_count); z++)
-			DisplayTagData(be32(entryinfos[i].flags), datas[i][z], z);
+			DisplayTagData(datas[i][z], z);
 	}
 }
 
@@ -129,7 +134,6 @@ static void ReadTagFromBRLAN(int idx, u8* brlan_file, tag_header *head, tag_entr
 {
 	int taghead_location = BRLAN_fileoffset;
 	BRLAN_ReadDataFromMemory(&head[idx], brlan_file, sizeof(tag_header));
-	dbgprintf("read header. entry count %d\n", head[idx].entry_count);
 	int i, z;
 	entries[idx] = realloc(entries[idx], sizeof(tag_entry) * head[idx].entry_count);
 	dbgprintf("reallocated entries[idx]\n");
@@ -172,22 +176,25 @@ void parse_brlan(char* filename)
 		printf("Error! Couldn't open %s!\n", filename);
 		exit(1);
 	}
-	strcpy(RLPA_Types[0], "X Translation");
-	strcpy(RLPA_Types[1], "Y Translation");
-	strcpy(RLPA_Types[2], "Z Translation");
-	strcpy(RLPA_Types[3], "Unknown (Alpha?) (0x03)");
-	strcpy(RLPA_Types[4], "Unknown (0x04)");
-	strcpy(RLPA_Types[5], "Angle");
-	strcpy(RLPA_Types[6], "X Zoom");
-	strcpy(RLPA_Types[7], "Y Zoom");
-	strcpy(RLPA_Types[8], "Width");
-	strcpy(RLPA_Types[9], "Height");
-	strcpy(RLPA_Types[10], "Unknown (0x0A)");
-	strcpy(RLPA_Types[11], "Unknown (0x0B)");
-	strcpy(RLPA_Types[12], "Unknown (0x0C)");
-	strcpy(RLPA_Types[13], "Unknown (0x0D)");
-	strcpy(RLPA_Types[14], "Unknown (0x0E)");
-	strcpy(RLPA_Types[15], "Unknown (0x0F)");
+	int i;
+	for(i = 0; i < 16; i++)
+		memset(tag_types_list[i], 0, 24);
+	strcpy(tag_types_list[0], "X Translation");
+	strcpy(tag_types_list[1], "Y Translation");
+	strcpy(tag_types_list[2], "Z Translation");
+	strcpy(tag_types_list[3], "0x03");
+	strcpy(tag_types_list[4], "0x04");
+	strcpy(tag_types_list[5], "Angle");
+	strcpy(tag_types_list[6], "X Zoom");
+	strcpy(tag_types_list[7], "Y Zoom");
+	strcpy(tag_types_list[8], "Width");
+	strcpy(tag_types_list[9], "Height");
+	strcpy(tag_types_list[10], "0x0A");
+	strcpy(tag_types_list[11], "0x0B");
+	strcpy(tag_types_list[12], "0x0C");
+	strcpy(tag_types_list[13], "0x0D");
+	strcpy(tag_types_list[14], "0x0E");
+	strcpy(tag_types_list[15], "0x0F");
 	fseek(fp, 0, SEEK_END);
 	int file_size = ftell(fp);
 	dbgprintf("Filesize is %d\n", file_size);
@@ -242,7 +249,6 @@ void parse_brlan(char* filename)
 	tag_data ***intag_datas = NULL;
 	dbgprintf("rlpa datas created.\n");
 	int intag_cnt = 1;
-	int i;
 	for(i = 0; i < tagcount; i++) {
 		BRLAN_fileoffset = be32(taglocations[i]) + be16(header.pai1_offset);
 		dbgprintf("fileoffset set.\n");
@@ -332,3 +338,334 @@ void parse_brlan(char* filename)
 	free(brlan_file);
 	fclose(fp);
 }
+
+void WriteBRLANTagHeader(tag_header* head, FILE* fp)
+{
+	fwrite(head, sizeof(tag_header), 1, fp);
+}
+
+void WriteBRLANTagEntries(tag_entry* entry, u8 count, FILE* fp)
+{
+	tag_entry writeentry;
+	int i;
+	for(i = 0; i < count; i++) {
+		writeentry.offset = be32(entry[i].offset);
+		fwrite(&writeentry, sizeof(tag_entry), 1, fp);
+	}
+}
+
+void WriteBRLANTagEntryinfos(tag_entryinfo entryinfo, FILE* fp)
+{
+	tag_entryinfo writeentryinfo;
+	writeentryinfo.type = be16(entryinfo.type);
+	writeentryinfo.unk1 = be16(entryinfo.unk1);
+	writeentryinfo.coord_count = be16(entryinfo.coord_count);
+	writeentryinfo.pad1 = be16(entryinfo.pad1);
+	writeentryinfo.unk2 = be32(entryinfo.unk2);
+	fwrite(&writeentryinfo, sizeof(tag_entryinfo), 1, fp);
+}
+
+void WriteBRLANTagData(tag_data* data, u16 count, FILE* fp)
+{
+	tag_data writedata;
+	int i;
+	for(i = 0; i < count; i++) {
+		printf("%08x -> %08x\n", data[i].part1, be32(data[i].part1));
+		writedata.part1 = be32(data[i].part1);
+		printf("%08x -> %08x\n", data[i].part2, be32(data[i].part2));
+		writedata.part2 = be32(data[i].part2);
+		printf("%08x -> %08x\n\n", data[i].part3, be32(data[i].part3));
+		writedata.part3 = be32(data[i].part3);
+		fwrite(&writedata, sizeof(tag_data), 1, fp);
+	}
+}
+
+void WriteBRLANEntry(brlan_entry *entr, FILE* fp)
+{
+	brlan_entry writeentr;
+	memset(writeentr.name, 0, 20);
+	strncpy(writeentr.name, entr->name, 20);
+	writeentr.flags = be32(entr->flags);
+	writeentr.anim_header_len = be32(entr->anim_header_len);
+	fwrite(&writeentr, sizeof(brlan_entry), 1, fp);
+}
+
+u32 create_entries_from_xml(mxml_node_t *tree, mxml_node_t *node, brlan_entry *entr, tag_header* head, u8** tagblob, u32* blobsize)
+{
+	tag_entry* entry = NULL;
+	tag_entryinfo* entryinfo = NULL;
+	tag_data** data = NULL;
+	mxml_node_t *tempnode = NULL;
+	mxml_node_t *subnode = NULL;
+	mxml_node_t *subsubnode = NULL;
+	char temp[256];
+	char temp2[256];
+	char temp3[15][24];
+	int i, x;
+
+	for(i = 0; i < 16; i++)
+		memset(temp3[i], 0, 24);
+	for(x = 0; x < 16; x++)
+		for(i = 0; i < strlen(tag_types_list[x]); i++)
+			temp3[x][i] = toupper(tag_types_list[x][i]);
+	head->entry_count = 0;
+	subnode = node;
+	for (x = 0, subnode = mxmlFindElement(subnode, node, "entry", NULL, NULL, MXML_DESCEND); subnode != NULL; subnode = mxmlFindElement(subnode, node, "entry", NULL, NULL, MXML_DESCEND), x++) {
+		head->entry_count++;
+		entry = realloc(entry, sizeof(tag_entry) * head->entry_count);
+		entryinfo = realloc(entryinfo, sizeof(tag_entryinfo) * head->entry_count);
+		if(data == NULL)
+			data = (tag_data**)malloc(sizeof(tag_data*) * head->entry_count);
+		else
+			data = (tag_data**)realloc(data, sizeof(tag_data*) * head->entry_count);
+		data[x] = NULL;
+		tempnode = mxmlFindElement(subnode, tree, "type", NULL, NULL, MXML_DESCEND);
+		if(tempnode == NULL) {
+			printf("Couldn't find attribute \"type\"!\n");
+			exit(1);
+		}
+		memset(temp, 0, 256);
+		memset(temp2, 0, 256);
+		get_value(tempnode, temp, 24);
+		for(i = 0; i < strlen(temp); i++)
+			temp2[i] = toupper(temp[i]);
+		for(i = 0; (i < 16) && (strcmp(temp3[i - 1], temp2) != 0); i++);
+		if(i == 16)
+			i = atoi(temp2);
+		entry[x].offset = 0;
+		entryinfo[x].type = i;
+		entryinfo[x].unk1 = 0x0200;
+		entryinfo[x].pad1 = 0x0000;
+		entryinfo[x].unk2 = 0x0000000C;
+		entryinfo[x].coord_count = 0;
+		subsubnode = subnode;
+		for (i = 0, subsubnode = mxmlFindElement(subsubnode, subnode, "triplet", NULL, NULL, MXML_DESCEND); subsubnode != NULL; subsubnode = mxmlFindElement(subsubnode, subnode, "triplet", NULL, NULL, MXML_DESCEND), i++) {
+			entryinfo[x].coord_count++;
+			data[x] = realloc(data[x], sizeof(tag_data) * entryinfo[x].coord_count);
+			tempnode = mxmlFindElement(subsubnode, subsubnode, "frame", NULL, NULL, MXML_DESCEND);
+			if(tempnode == NULL) {
+				printf("Couldn't find attribute \"frame\"!\n");
+				exit(1);
+			}
+			get_value(tempnode, temp, 256);
+			*(f32*)(&(data[x][i].part1)) = atof(temp);
+			tempnode = mxmlFindElement(subsubnode, subsubnode, "value", NULL, NULL, MXML_DESCEND);
+			if(tempnode == NULL) {
+				printf("Couldn't find attribute \"value\"!\n");
+				exit(1);
+			}
+			get_value(tempnode, temp, 256);
+			*(f32*)(&(data[x][i].part2)) = atof(temp);
+			tempnode = mxmlFindElement(subsubnode, subsubnode, "interpolation", NULL, NULL, MXML_DESCEND);
+			if(tempnode == NULL) {
+				printf("Couldn't find attribute \"interpolation\"!\n");
+				exit(1);
+			}
+			get_value(tempnode, temp, 256);
+			*(f32*)(&(data[x][i].part3)) = atof(temp);
+		}
+	}
+	FILE* fp = fopen("temp.blan", "wb+");
+	if(fp == NULL) {
+		printf("Couldn't open temporary temp.blan file\n");
+		exit(1);
+	}
+	fseek(fp, 0, SEEK_SET);
+	entr->anim_header_len = 0;
+	WriteBRLANEntry(entr, fp);
+	WriteBRLANTagHeader(head, fp);
+	u32 entryloc = ftell(fp);
+	WriteBRLANTagEntries(entry, head->entry_count, fp);
+	u32* entryinfolocs = (u32*)calloc(head->entry_count, sizeof(u32));
+	for(x = 0; x < head->entry_count; x++) {
+		entryinfolocs[x] = ftell(fp);
+		entry[x].offset = entryinfolocs[x] - sizeof(brlan_entry);
+		WriteBRLANTagEntryinfos(entryinfo[x], fp);
+		WriteBRLANTagData(data[x], entryinfo[x].coord_count, fp);
+	}
+	u32 oldpos = ftell(fp);
+	fseek(fp, entryloc, SEEK_SET);
+	WriteBRLANTagEntries(entry, head->entry_count, fp);
+	fseek(fp, oldpos, SEEK_SET);
+	u32 filesz = ftell(fp);
+	fseek(fp, 0, SEEK_SET);
+	entr->anim_header_len = sizeof(tag_header) + (sizeof(tag_entry) * head->entry_count);
+	WriteBRLANEntry(entr, fp);
+	*blobsize = filesz;
+	*tagblob = (u8*)malloc(*blobsize);
+	fseek(fp, 0, SEEK_SET);
+	fread(*tagblob, *blobsize, 1, fp);
+	free(entry);
+	free(entryinfo);
+	free(data);
+	printf("All done.\n");
+	return filesz;
+}
+
+void create_tag_from_xml(mxml_node_t *tree, mxml_node_t *node, u8** tagblob, u32* blobsize)
+{
+	tag_header head;
+	brlan_entry entr;
+	mxml_node_t *tempnode = mxmlFindElement(node, tree, "name", NULL, NULL, MXML_DESCEND);
+	if(tempnode == NULL) {
+		printf("Couldn't find attribute \"name\"!\n");
+		exit(1);
+	}
+	memset(entr.name, 0, 20);
+	char temp[21];
+	get_value(tempnode, temp, 20);
+	strncpy(entr.name, temp, 20);
+	entr.flags = 0x01000000;
+	tempnode = mxmlFindElement(node, tree, "magic", NULL, NULL, MXML_DESCEND);
+	if(tempnode == NULL) {
+		printf("Couldn't find attribute \"magic\"!\n");
+		exit(1);
+	}
+	get_value(tempnode, temp, 5);
+	head.magic[0] = temp[0];
+	head.magic[1] = temp[1];
+	head.magic[2] = temp[2];
+	head.magic[3] = temp[3];
+	head.pad1 = 0;
+	head.pad2 = 0;
+	head.pad3 = 0;
+	create_entries_from_xml(tree, node, &entr, &head, tagblob, blobsize);
+}
+
+void WriteBRLANHeader(brlan_header rlanhead, FILE* fp)
+{
+	brlan_header writehead;
+	writehead.magic[0] = rlanhead.magic[0];
+	writehead.magic[1] = rlanhead.magic[1];
+	writehead.magic[2] = rlanhead.magic[2];
+	writehead.magic[3] = rlanhead.magic[3];
+	writehead.unk1 = be32(rlanhead.unk1);
+	writehead.file_size = be32(rlanhead.file_size);
+	writehead.pai1_offset = be16(rlanhead.pai1_offset);
+	writehead.pai1_count = be16(rlanhead.pai1_count);
+	fwrite(&writehead, sizeof(brlan_header), 1, fp);
+}
+
+void WriteBRLANPaiHeader(brlan_pai1_header_type1 paihead, FILE* fp)
+{
+	brlan_pai1_header_type1 writehead;
+	writehead.magic[0] = paihead.magic[0];
+	writehead.magic[1] = paihead.magic[1];
+	writehead.magic[2] = paihead.magic[2];
+	writehead.magic[3] = paihead.magic[3];
+	writehead.size = be32(paihead.size);
+	writehead.framesize = be16(paihead.framesize);
+	writehead.flags = paihead.flags;
+	writehead.unk1 = paihead.unk1;
+	writehead.num_timgs = be16(paihead.num_timgs);
+	writehead.num_entries = be16(paihead.num_entries);
+	writehead.entry_offset = be32(paihead.entry_offset);
+	fwrite(&writehead, sizeof(brlan_pai1_header_type1), 1, fp);
+}
+
+void write_brlan(char *infile, char* outfile)
+{
+	int i;
+	for(i = 0; i < 16; i++)
+		memset(tag_types_list[i], 0, 24);
+	strcpy(tag_types_list[0], "X Translation");
+	strcpy(tag_types_list[1], "Y Translation");
+	strcpy(tag_types_list[2], "Z Translation");
+	strcpy(tag_types_list[3], "0x03");
+	strcpy(tag_types_list[4], "0x04");
+	strcpy(tag_types_list[5], "Angle");
+	strcpy(tag_types_list[6], "X Zoom");
+	strcpy(tag_types_list[7], "Y Zoom");
+	strcpy(tag_types_list[8], "Width");
+	strcpy(tag_types_list[9], "Height");
+	strcpy(tag_types_list[10], "0x0A");
+	strcpy(tag_types_list[11], "0x0B");
+	strcpy(tag_types_list[12], "0x0C");
+	strcpy(tag_types_list[13], "0x0D");
+	strcpy(tag_types_list[14], "0x0E");
+	strcpy(tag_types_list[15], "0x0F");
+	FILE* fpx = fopen(infile, "r");
+	if(fpx == NULL) {
+		printf("xmlan couldn't be opened!\n");
+		exit(1);
+	}
+	mxml_node_t *hightree = mxmlLoadFile(NULL, fpx, MXML_TEXT_CALLBACK);
+	if(hightree == NULL) {
+		printf("Couldn't open hightree!\n");
+		exit(1);
+	}
+	mxml_node_t *tree = mxmlFindElement(hightree, hightree, "xmlan", NULL, NULL, MXML_DESCEND);
+	if(hightree == NULL) {
+		printf("Couldn't get tree!\n");
+		exit(1);
+	}
+	mxml_node_t *node;
+	FILE* fp = fopen(outfile, "wb+");
+	if(fpx == NULL) {
+		printf("destination brlan couldn't be opened!\n");
+		exit(1);
+	}
+	u8* tagblob;
+	u32 blobsize;
+	u16 blobcount = 0;
+	u32 bloboffset;
+	brlan_header rlanhead;
+	rlanhead.magic[0] = 'R';
+	rlanhead.magic[1] = 'L';
+	rlanhead.magic[2] = 'A';
+	rlanhead.magic[3] = 'N';
+	rlanhead.unk1 = 0xFEFF0008;
+	rlanhead.file_size = 0;
+	rlanhead.pai1_offset = sizeof(brlan_header);
+	rlanhead.pai1_count = 1;
+	WriteBRLANHeader(rlanhead, fp);
+	brlan_pai1_header_type1 paihead;
+	paihead.magic[0] = 'p';
+	paihead.magic[1] = 'a';
+	paihead.magic[2] = 'i';
+	paihead.magic[3] = '1';
+	paihead.size = 0;
+	char temp[256];
+	mxml_node_t *tempnode = mxmlFindElement(tree, tree, "framesize", NULL, NULL, MXML_DESCEND);
+	if(tempnode == NULL) {
+		printf("Couldn't find attribute \"framesize\"!\n");
+		exit(1);
+	}
+	get_value(tempnode, temp, 256);
+	paihead.framesize = atoi(temp);
+	paihead.flags = 1;
+	paihead.unk1 = 0;
+	paihead.num_timgs = 0;
+	paihead.num_entries = 0;
+	paihead.entry_offset = sizeof(brlan_pai1_header_type1);
+	WriteBRLANPaiHeader(paihead, fp);
+	// Do header stuff here...
+	u8* tagchunksbig = (u8*)calloc(MAXIMUM_TAGS_SIZE, 1);
+	MEMORY* tagsmem = mopen(tagchunksbig, MAXIMUM_TAGS_SIZE, 3);
+	u32 totaltagsize = 0;
+	for(node = mxmlFindElement(tree, tree, "tag", NULL, NULL, MXML_DESCEND); node != NULL; node = mxmlFindElement(node, tree, "tag", NULL, NULL, MXML_DESCEND)) {
+		blobcount++;
+		bloboffset = ftell(fp) + mtell(tagsmem) - (4 * (blobcount + 1));
+		bloboffset = be32(bloboffset);
+		fwrite(&bloboffset, sizeof(u32), 1, fp);
+		create_tag_from_xml(tree, node, &tagblob, &blobsize);
+		mwrite(tagblob, blobsize, 1, tagsmem);
+		totaltagsize += blobsize;
+	}
+	tagchunksbig = (u8*)mclose(tagsmem);
+	fwrite(tagchunksbig, totaltagsize, 1, fp);
+	paihead.num_entries = blobcount;
+	fseek(fp, 0, SEEK_END);
+	paihead.size = ftell(fp) - rlanhead.pai1_offset;
+	rlanhead.file_size = ftell(fp);
+	fseek(fp, 0, SEEK_SET);
+	WriteBRLANHeader(rlanhead, fp);
+	WriteBRLANPaiHeader(paihead, fp);
+}
+
+void make_brlan(char* infile, char* outfile)
+{
+	printf("Starting xmlan file @ %s parsing.\n", infile);
+	write_brlan(infile, outfile);
+}
+

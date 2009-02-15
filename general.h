@@ -9,11 +9,15 @@
 
 #define BENZIN_VERSION_MAJOR		0
 #define BENZIN_VERSION_MINOR		1
-#define BENZIN_VERSION_BUILD		100
+#define BENZIN_VERSION_BUILD		200
 #define BENZIN_VERSION_OTHER		"WIP"
 
 #define USE_BRLAN
 //#define USE_BRLYT
+
+#define DEBUGBRLAN
+#define DEBUGMAIN
+//#define DEBUGBRLYT
 
 #define fatal(x)	printf(x); exit(1)
 

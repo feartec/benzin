@@ -69,5 +69,6 @@ typedef struct
 // grs1, gre1, pas1, and pae1 all don't have anything special. they seem to just be prefixes to some sections.
 
 void parse_brlyt(char *filename);
+void make_brlyt(char* infile, char* outfile);
 
 #endif //BRLYT_H_

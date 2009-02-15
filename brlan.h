@@ -82,10 +82,11 @@ typedef struct
 
 typedef struct
 {
-	u32		flags;			// Flags?
+	u16		type;			// Type (look at animtypes)
+	u16		unk1;			// ??? Every case has been 0x0200
 	u16		coord_count;		// How many coordinates.
 	u16		pad1;			// All cases I've seen is zero.
-	u32		unk1;			// ??? In every case I've seen, it is \x00\x00\x00\x0C.
+	u32		unk2;			// ??? In every case I've seen, it is 0x0000000C.
 } tag_entryinfo;
 
 typedef struct
@@ -97,17 +98,7 @@ typedef struct
 
 
 void parse_brlan(char* filename);
-
-
-
-
-
-
-
-
-
-
-
+void make_brlan(char* infile, char* outfile);
 
 #endif //BRLAN_H_
 

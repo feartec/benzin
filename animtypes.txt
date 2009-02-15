@@ -2,7 +2,7 @@ RLPA
 0   translateX
 1   translateY
 2   translateZ
-3   pane_unk1  (Related to Alpha? See GH3 banner)
+3   pane_unk1
 4   pane_unk2
 5   angle
 6   xmag
