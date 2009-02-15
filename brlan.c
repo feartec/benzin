@@ -111,10 +111,12 @@ static void DisplayTagInformation(int idx, tag_header* heads, tag_entry** entrie
 	printf("		Entries:\n");
 	for(i = 0; i < head.entry_count; i++) {
 		printf("			Entry %u:\n", i);
-	if(FourCCsMatch(head.magic, tag_FourCCs[0]) == 1)
-//		printf("				Type: %04x\n", be16(entryinfos[i].type));
-		printf("				Type: %s (%04x)\n", tag_types_list[be32(entryinfos[i].type) % 16], be16(entryinfos[i].type));
-
+//		if(FourCCsMatch(head.magic, tag_FourCCs[0]) == 1) {
+			if(be16(entryinfos[i].type) < 16)
+				printf("				Type: %s (%04x)\n", tag_types_list[be16(entryinfos[i].type)], be16(entryinfos[i].type));
+			else
+				printf("				Type: Unknown (%04x)\n", be16(entryinfos[i].type));
+//		}
 // User doesn't need to know the offset
 //		printf("				Offset: %lu\n", be32(entries[i].offset));
 
@@ -323,7 +325,7 @@ void parse_brlan(char* filename)
 	for(i = 0; i < tagcount; i++) {
 		printf("\n	Entry %u:\n", i);
 		printf("		Name: %s\n", tag_entries[i].name);
-		printf("		Flags: %08x\n", be32(tag_entries[i].flags));
+		printf("		Type: %s\n", be32(tag_entries[i].flags) == 0x01000000 ? "Normal" : "Strange");
 // Not important to user, why bother.
 //		printf("		Animation Header Length: %lu\n", be32(tag_entries[i].anim_header_len));		
 		printf("		FourCC: %c%c%c%c\n", CCs[i][0], CCs[i][1], CCs[i][2], CCs[i][3]);
@@ -432,6 +434,8 @@ u32 create_entries_from_xml(mxml_node_t *tree, mxml_node_t *node, brlan_entry *e
 		for(i = 0; (i < 16) && (strcmp(temp3[i - 1], temp2) != 0); i++);
 		if(i == 16)
 			i = atoi(temp2);
+		else
+			i--;
 		entry[x].offset = 0;
 		entryinfo[x].type = i;
 		entryinfo[x].unk1 = 0x0200;
@@ -512,10 +516,9 @@ void create_tag_from_xml(mxml_node_t *tree, mxml_node_t *node, u8** tagblob, u32
 		exit(1);
 	}
 	memset(entr.name, 0, 20);
-	char temp[21];
+	char temp[256];
 	get_value(tempnode, temp, 20);
 	strncpy(entr.name, temp, 20);
-	entr.flags = 0x01000000;
 	tempnode = mxmlFindElement(node, tree, "magic", NULL, NULL, MXML_DESCEND);
 	if(tempnode == NULL) {
 		printf("Couldn't find attribute \"magic\"!\n");
@@ -529,6 +532,20 @@ void create_tag_from_xml(mxml_node_t *tree, mxml_node_t *node, u8** tagblob, u32
 	head.pad1 = 0;
 	head.pad2 = 0;
 	head.pad3 = 0;
+	tempnode = mxmlFindElement(node, tree, "type", NULL, NULL, MXML_DESCEND);
+	if(tempnode == NULL) {
+		printf("Couldn't find attribute \"type\"!\n");
+		exit(1);
+	}
+	int x;
+	get_value(tempnode, temp, 256);
+	for(x = 0; x < strlen(temp); x++)
+		temp[x] = toupper(temp[x]);
+	printf("%s\n", temp);
+	if(strcmp(temp, "NORMAL") == 0)
+		entr.flags = 0x01000000;
+	else if(strcmp(temp, "STRANGE") == 0)
+		entr.flags = 0x02000000;
 	create_entries_from_xml(tree, node, &entr, &head, tagblob, blobsize);
 }
 

@@ -4,6 +4,7 @@
 	<tag>
 		<name>pic</name>
 		<magic>RLPA</magic>
+		<type>Normal</type>
 		<entry>
 			<type>X Translation</type>
 			<triplet>
@@ -34,6 +35,7 @@
 	<tag>
 		<name>pic</name>
 		<magic>RLVC</magic>
+		<type>Normal</type>
 		<entry>
 			<type>16</type>
 			<triplet>
