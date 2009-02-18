@@ -1,7 +1,7 @@
 import sys, struct, re
 from ethyl import *
 
-if len(sys.argv) != 2:
+if len(sys.argv) != 3:
     print 'Usage: python write-brlan.py input.rlan.py output.brlan'
     print '(for example, see test.rlan.py)'
     sys.exit(1)

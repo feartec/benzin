@@ -1,7 +1,7 @@
 import sys, struct, re, random
 from ethyl import *
 
-if len(sys.argv) != 2:
+if len(sys.argv) != 3:
     print 'Usage: python write-brlyt.py input.rlyt.py output.brlyt'
     print '(for example, see test.rlyt.py)'
     sys.exit(1)
