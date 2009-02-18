@@ -1,6 +1,10 @@
 import sys, struct, re
 from ethyl import *
 
+if len(sys.argv) != 2:
+    print 'Usage: python parse-brlan.py something.brlan'
+    sys.exit(1)
+
 f = open(sys.argv[1], 'rb')
 rlan = f.read()
 f.close()
@@ -35,7 +39,9 @@ for typ, chunk in ch:
        offs = struct.unpack('>I', chunk[pos:pos+4])[0] - 8
        
        name = chunk[offs:offs + 0x14].rstrip('\0')
+       
        aunk, aoffs = struct.unpack('>II', chunk[offs + 0x14:offs + 0x1c])
+       print name, hex(aoffs)
        aoffs += offs
        atyp = chunk[aoffs:aoffs+4]
        #print hex(aoffs), hex(offs), name

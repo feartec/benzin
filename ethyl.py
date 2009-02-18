@@ -356,3 +356,5 @@ def put_opt(var, flags, bit, size, item_type=None):
         else:
             raise Exception('unhandled')
         return ret, flags
+def i2f(int):
+    return struct.unpack('>f', struct.pack('>I', int))[0]

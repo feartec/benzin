@@ -1,6 +1,11 @@
 import sys, struct, re
 from ethyl import *
 
+if len(sys.argv) != 2:
+    print 'Usage: python parse-brlyt.py something.brlyt'
+    sys.exit(1)
+
+
 f = open(sys.argv[1], 'rb')
 rlyt = f.read()
 f.close()

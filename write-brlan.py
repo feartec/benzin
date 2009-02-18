@@ -1,6 +1,12 @@
 import sys, struct, re
 from ethyl import *
 
+if len(sys.argv) != 2:
+    print 'Usage: python write-brlan.py input.rlan.py output.brlan'
+    print '(for example, see test.rlan.py)'
+    sys.exit(1)
+
+
 CAT_COORDS   = 0x1000000
 CAT_2_UNK    = 0x2000000 # alpha and stuff
 COORD_X      = 0
