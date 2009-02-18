@@ -502,6 +502,8 @@ u32 create_entries_from_xml(mxml_node_t *tree, mxml_node_t *node, brlan_entry *e
 	free(entry);
 	free(entryinfo);
 	free(data);
+	fclose(fp);
+	remove("temp.blan");
 	printf("All done.\n");
 	return filesz;
 }
