@@ -1,4 +1,6 @@
-OBJECTS = main.o general.o brlyt.o brlan.o memfile.o xml.o
+GENERICOBJECTS = main.o general.o memfile.o xml.o endian.o
+MAINOBJECTS = brlyt.o brlan.o
+OBJECTS = $(GENERICOBJECTS) $(MAINOBJECTS)
 LIBS = -lmxml
 OUTPUT = benzin
 main: $(OBJECTS)
