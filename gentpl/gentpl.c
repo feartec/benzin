@@ -31,17 +31,18 @@ int main(int argc, char **argv) {
     }
     im = gdImageCreateFromPng(in);
     fclose(in);
-    FILE *out = fopen(argv[2], "wb");
-    if(!out) {
-        printf("Failed to open %s\n", argv[2]); // why strerror not working?
-        exit(1);
-    }
     
     if(gdImageSX(im) % 4 != 0 || gdImageSY(im) % 4 != 0) {
         printf("Bad dimensions\n");
         exit(1);
     }
     
+    FILE *out = fopen(argv[2], "wb");
+    if(!out) {
+        printf("Failed to open %s\n", argv[2]); // why strerror not working?
+        exit(1);
+    }
+
     char magic[] = {0x00, 0x20, 0xaf, 0x30};
     fwrite(magic, 1, 4, out);
     
