@@ -49,9 +49,11 @@ for c in chunks:
             strings = ''
             offss = []
             for thing in ls:
-                name = untv(thing['name'])
+                name = thing['name'] + '\x00'
                 offss.append(len(strings))
                 strings += name
+            while len(strings) % 4 != 0: # todo: replace with something better
+                strings += '\0'
             for n, thing in enumerate(ls):
                 chunk += struct.pack('>II', offss[n] + 8 * len(ls), thing['unk'])
             chunk += strings
