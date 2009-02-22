@@ -52,8 +52,6 @@ for c in chunks:
                 name = thing['name'] + '\x00'
                 offss.append(len(strings))
                 strings += name
-            while len(strings) % 4 != 0: # todo: replace with something better
-                strings += '\0'
             for n, thing in enumerate(ls):
                 chunk += struct.pack('>II', offss[n] + 8 * len(ls), thing['unk'])
             chunk += strings
@@ -127,6 +125,8 @@ for c in chunks:
                 failz
         else:
             raise Exception('Unhandled type %s' % typ)
+    while len(chunk) % 4 != 0:
+        chunk += '\0'
     rlyt += typ + struct.pack('>I', len(chunk) + 8) + chunk
 
 
