@@ -31,10 +31,12 @@ int main(int argc, char **argv) {
     }
     im = gdImageCreateFromPng(in);
     fclose(in);
-    
-    if(gdImageSX(im) % 4 != 0 || gdImageSY(im) % 4 != 0) {
-        printf("Bad dimensions\n");
-        exit(1);
+
+    int width = gdImageSX(im);
+    int height = gdImageSY(im);
+
+    if(width % 4 != 0 || height % 4 != 0) {
+        printf("Warning: Dimensions (%dx%d) not multiples of 4.\n", width, height);
     }
     
     FILE *out = fopen(argv[2], "wb");
@@ -64,13 +66,19 @@ int main(int argc, char **argv) {
     
     for(int i = 0; i < 8; i++) fputc(0, out);
     
-    for(int y = 0; y < gdImageSY(im); y += 4) {
-        for(int x = 0; x < gdImageSX(im); x += 4) {
+    for(int y = 0; y < height; y += 4) {
+        for(int x = 0; x < width; x += 4) {
             for(int y1 = y; y1 < y + 4; y1++) {
                 for(int x1 = x; x1 < x + 4; x1++) {
-                    int p = gdImageGetPixel(im, x1, y1);
+                    int p;
+                    if(x1 >= width || y1 >= height) {
+                        p = 0;
+                    } else {
+                        p = gdImageGetPixel(im, x1, y1);
+                    }
                     unsigned char a = 254 - 2*((unsigned char) gdImageAlpha(im, p));
                     if(a == 254) a++;
+
                     unsigned char r = (unsigned char) gdImageRed(im, p);
                     unsigned char g = (unsigned char) gdImageGreen(im, p);
                     unsigned char b = (unsigned char) gdImageBlue(im, p);
